@@ -84,7 +84,7 @@ let load_exn conninfo =
   let table_name = default_table in 
   let res = Mysql.exec conn (create_table_stmt table_name) in
   let status = Mysql.status conn in
-  Mysql.disconnect conn;
+  Mysql.disconnect conn; (*TODO Is this the best way to run a sequence of expressions? *)
   match status with
   | Mysql.StatusOK 
   | Mysql.StatusEmpty ->
@@ -96,10 +96,10 @@ let load conninfo =
   let on_exn e = `Error (`Database (`Load conninfo, exn_to_string e)) in
   in_posix_thread ~on_exn (fun() -> load_exn conninfo) 
 
-(*
 (* avoiding persistent connections for now, so this is a NoOp *)
-let close {handle} = ()
+let close = ()
 
+(*
 let get ?collection t ~key =
 
 let get_all t ~collection =
