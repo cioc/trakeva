@@ -14,12 +14,13 @@ build:
 apidoc:
 	mkdir -p _apidoc && \
 	ocamlfind ocamldoc -html -d _apidoc/ \
-            -package nonstd,pvem_lwt_unix,sqlite3,postgresql,sosa  \
+            -package nonstd,pvem_lwt_unix,sqlite3,postgresql,mysql,sosa  \
 	    -thread  -charset UTF-8 -t "Trakeva API" -keep-code -colorize-code \
 	    -sort \
 	    -I _build/src/lib/ \
 	    -I _build/src/lib_sqlite/ \
 	    -I _build/src/lib_postgresql/ \
+      -I _build/src/lib_mysql/ \
 	    -I _build/gen/lib_of_uri/ \
 	    src/*/*.mli src/*/*.ml gen/*/*.mli
 

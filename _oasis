@@ -1,0 +1,59 @@
+OASISFormat: 0.4
+Name:        trakeva
+Version:     0.0.0
+Synopsis:    Transactions, Keys, and Values: Common interface to various databases
+Authors:     Sebastien Mondet <seb@mondet.org>
+License:     Apache-2.0
+Plugins:     META (0.4)
+
+Flag test
+  Description: Build the Tests (requires Sosa)
+  Default$: false
+
+Library trakeva
+  Path:       src/lib
+  BuildTools: ocamlbuild
+  BuildDepends: nonstd, threads, pvem_lwt_unix
+  Modules:    Trakeva, Trakeva_cache
+
+Library trakeva_sqlite
+  Build$: true || flag(test)
+  Install$: true
+  Path:       src/lib_sqlite
+  BuildTools: ocamlbuild
+  BuildDepends: trakeva, sqlite3, lwt.preemptive
+  Modules:    Trakeva_sqlite
+
+Library trakeva_postgresql
+  Build$: true || flag(test)
+  Install$: true
+  Path:       src/lib_postgresql
+  BuildTools: ocamlbuild
+  BuildDepends: trakeva, postgresql, lwt.preemptive
+  Modules:    Trakeva_postgresql
+
+Library trakeva_mysql
+  Build$: true || flag(test)
+  Install$: true
+  Path:       src/lib_mysql
+  BuildTools: ocamlbuild
+  BuildDepends: trakeva, mysql, lwt.preemptive
+  Modules:    Trakeva_mysql
+
+Library trakeva_of_uri
+  Build$: true
+  Install$: true
+  Path: gen/lib_of_uri
+  BuildTools: ocamlbuild
+  BuildDepends: trakeva, uri, trakeva_sqlite, trakeva_postgresql
+  Modules:    Trakeva_of_uri
+
+Executable trakeva_tests
+  Path: src/test/
+  BuildTools: ocamlbuild
+  CompiledObject: best
+  BuildDepends: trakeva, trakeva_sqlite, trakeva_postgresql, trakeva_of_uri, sosa
+  Build$: flag(test)
+  Install: false
+  MainIs:     main.ml
+
