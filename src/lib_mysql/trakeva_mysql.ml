@@ -92,11 +92,11 @@ let load_exn conninfo =
   | Mysql.StatusError error_code ->
     ksprintf failwith "Cannot create table %S" table_name (* Q: what happends when the table already exists? TODO - error code translation *)
 
-(*
 let load conninfo =
   let on_exn e = `Error (`Database (`Load conninfo, exn_to_string e)) in
   in_posix_thread ~on_exn (fun() -> load_exn conninfo) 
-   
+
+(*
 (* avoiding persistent connections for now, so this is a NoOp *)
 let close {handle} = ()
 
