@@ -2,6 +2,7 @@ open Nonstd
 open Pvem_lwt_unix
 open Pvem_lwt_unix.Deferred_result
 open Mysql
+open Mysql.Prepared
 open Trakeva
 module String = StringLabels
 
@@ -51,13 +52,13 @@ let get_keys_stmt (table : string) : string =
 
 (* default for InnoDB is repeatable read.  repeatable read is nice because you get a consistent snapshot during the transaction for reads.  It's not so nice because it doesn't lock the read rows by default.  So, it doesn't match the behavior of the postgres impl of trakeva.  Serializable transaction level causes each read to implicitily table a row lock i.e. like adding LOCK IN SHARE MODE to each SELECT *)
 (* another discussion to have is if this level of consistency is needed or not. For now, trying to get close to postgres existing behavior without locking the entire table. *) 
-let set_transaction_level_stmt = "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+let set_txn_level_stmt = "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
 
-let start_transaction_stmt = "START TRANSACTION"
+let start_txn_stmt = "START TRANSACTION"
 
-let commit_transaction_stmt = "COMMIT"
+let commit_txn_stmt = "COMMIT"
 
-let rollback_transaction_stmt = "ROLLBACK"
+let rollback_txn_stmt = "ROLLBACK"
 
 let default_table = "trakeva_default_table"
 
@@ -74,17 +75,43 @@ let get_db (conninfo : string) : Mysql.db =
   } 
 
 let get_conn (conninfo : string) : Mysql.dbd = 
+  (* TODO - think about how this call can fail *)
   Mysql.connect (get_db conninfo)
 
 let exn_to_string e = "Not implemented" (* TODO implement *)
+
+(* We'll think in terms of transaction since we are dealing with a sql (my). *)
+let start_txn conninfo : Mysql.dbd = 
+  let conn = get_conn conninfo in
+  (* TODO - handle errors *)
+  let config_status = exec conn set_txn_level_stmt in
+  let start_status = exec conn start_txn_stmt in
+  conn
+
+let exec (conn : Mysql.dbd) (stmt : string) : Mysql.status =   
+  let result = Mysql.exec conn stmt in
+  Mysql.status conn
+
+let query (conn : Mysql.dbd) (stmt : string) (params : string array) : (Prepared.stmt_result) = 
+  let prepared = Prepared.create conn stmt in
+  Prepared.execute prepared params 
+
+let rollback_txn (conn : Mysql.dbd) = 
+  (* TODO - handle errors *)
+  let status = exec conn rollback_txn_stmt in
+  Mysql.disconnect conn
+
+let commit_txn (conn : Mysql.dbd) = 
+  (* TODO - handle errors *)
+  let status = exec conn commit_txn_stmt in
+  Mysql.disconnect conn
 
 (* TODO how is table_name actually changed by user? *)
 let load_exn conninfo = 
   let conn = get_conn conninfo in
   let table_name = default_table in 
-  let res = Mysql.exec conn (create_table_stmt table_name) in
-  let status = Mysql.status conn in
-  Mysql.disconnect conn; (*TODO Is this the best way to run a sequence of expressions? *)
+  let status = exec conn (create_table_stmt table_name) in
+  commit_txn conn ; (*TODO Is this the best way to run a sequence of expressions? *)
   match status with
   | Mysql.StatusOK 
   | Mysql.StatusEmpty ->
