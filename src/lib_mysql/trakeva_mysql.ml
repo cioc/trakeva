@@ -84,8 +84,8 @@ let exn_to_string e = "Not implemented" (* TODO implement *)
 let start_txn conninfo : Mysql.dbd = 
   let conn = get_conn conninfo in
   (* TODO - handle errors *)
-  let config_status = exec conn set_txn_level_stmt in
-  let start_status = exec conn start_txn_stmt in
+  let (_ : Mysql.result) = exec conn set_txn_level_stmt in
+  let (_ : Mysql.result) = exec conn start_txn_stmt in
   conn
 
 let exec (conn : Mysql.dbd) (stmt : string) : Mysql.status =   
@@ -126,9 +126,10 @@ let load conninfo =
 (* avoiding persistent connections for now, so this is a NoOp *)
 let close = ()
 
-(*
 let get ?collection t ~key =
-
+  let conn = start_txn t.conninfo in
+     
+(*
 let get_all t ~collection =
 
 let iterator t ~collection =
