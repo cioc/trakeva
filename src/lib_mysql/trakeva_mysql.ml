@@ -63,29 +63,34 @@ let default_table = "trakeva_default_table"
 
 let table_name t = t.table_name
 
-(*
-let get_db (conninfo : string) : Mysql.db = 
-  (* TODO implement *) 
+let get_db (conninfo : string) : Mysql.db =
+  (* TODO - actually parse the URI *)
+  { dbhost = None;
+    dbname = None;
+    dbport = None;
+    dbpwd = None;
+    dbuser = None;
+    dbsocket = None
+  } 
 
-let exn_to_string = 
-  (* TODO implement *)
-*)
+let get_conn (conninfo : string) : Mysql.dbd = 
+  Mysql.connect (get_db conninfo)
+
+let exn_to_string e = "Not implemented" (* TODO implement *)
 
 (* TODO how is table_name actually changed by user? *)
 let load_exn conninfo = 
-  (* let conn = get_conn conninfo in *)
+  let conn = get_conn conninfo in
   let table_name = default_table in 
-  (* let res = Mysql.exec conn (create_table_stmt table_name) in *)
-  {table_name; conninfo} 
- 
-  (* fun() -> Mysql.close conn)  close before we do anything else. Q: Is this the ocaml way to do this? *) 
-  (*match res#status with
+  let res = Mysql.exec conn (create_table_stmt table_name) in
+  let status = Mysql.status conn in
+  Mysql.disconnect conn;
+  match status with
   | Mysql.StatusOK 
   | Mysql.StatusEmpty ->
     {table_name; conninfo} 
-  | Mysql.StatusError ->
-    ksprintf failwith "Cannot create table %S" table_name (* Q: what happends when the table already exists? *)
-  *)
+  | Mysql.StatusError error_code ->
+    ksprintf failwith "Cannot create table %S" table_name (* Q: what happends when the table already exists? TODO - error code translation *)
 
 (*
 let load conninfo =
